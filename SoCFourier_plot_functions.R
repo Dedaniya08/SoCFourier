@@ -704,37 +704,41 @@ plot_ks_matches = function(matches=NULL,n.query.cgs.to.plot=1,betas=NULL,plot.sa
 #' @param plot.params 
 #'
 #' @return NULL
-plot_cpg_locations_karyo = function(annot.gr=NULL,plot.save=FALSE,plot.params=NULL){
+plot_cpg_locations_karyo = function(annot.gr=NULL){
 
-  require(tidyverse)
-  require(GenomicRanges)
-  require(ggbio)
-  require(biovizBase)
+  require(magick)
+  require(RIdeogram)
+  data(human_karyotype, package="RIdeogram")
+  data(gene_density, package="RIdeogram")
+  human_karyotype <- human_karyotype[1:22,]
+  gene_density$Value = "0"
   
-  data(ideoCyto)
+  chr_plot.gr <- annot.gr  #'please chech weather the file is correct ( in mail the file name was annotated.array.gr.rds)
+  chr_plot_replicate_true <- as.data.frame(chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)])
+  chr_1<-data.frame(chr_plot_replicate_true$seqnames,chr_plot_replicate_true$start-1600000,chr_plot_replicate_true$start-1400000)
+  chr_1$chr_plot_replicate_true.seqnames<-gsub("chr","",chr_1$chr_plot_replicate_true.seqnames)
+  chr_1$Value = "200"
+  chr_1 <- setNames(chr_1,  c("Chr", "Start", "End","Value"))
   
-  repl.gr = annot.gr[annot.gr$replicated]
-  repl.gr <- keepSeqlevels(repl.gr, paste0('chr',as.character(1:22)))
-  # get seqlength (otherwise ggbio uses extent of data)
-  seqlengths(repl.gr) <- as.numeric(seqlengths(ideoCyto$hg19)[1:22])
+  chr_loc_marked_for_plot <-rbind(gene_density,chr_1,stringsAsFactors=TRUE)
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[which(chr_loc_marked_for_plot$Chr != "X"), ]
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[which(chr_loc_marked_for_plot$Chr != "Y"), ]
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[order(chr_loc_marked_for_plot$Chr,chr_loc_marked_for_plot$Start), ]
+  rownames(chr_loc_marked_for_plot) <- 1 : length(rownames(chr_loc_marked_for_plot))
+  chr_loc_marked_for_plot$Chr<-as.numeric(chr_loc_marked_for_plot$Chr)
+  chr_loc_marked_for_plot$Value<-as.numeric(chr_loc_marked_for_plot$Value)
   
-  print(
-    autoplot(
-      repl.gr,
-      colour='red',
-      size=0.3,
-      show.legend=FALSE,
-      layout='karyogram'
-    )
-  )
-
-  if(plot.save){
-    ggsave(
-      filename = paste0(plot.params$dir,'replicated.cg.karyogram.pdf'),
-      dpi = plot.params$dpi,width = 12,height = 14,units = 'cm'
-    )
-  }
-
+  ideogram(karyotype = human_karyotype,label = NULL, label_type = NULL, overlaid = chr_loc_marked_for_plot, colorset1 = c( "#ededed", "#e5432d"),width = 170,Lx=160,Ly=35)
+  convertSVG("chromosome.svg", file = paste0(plot.dir,'chromosome_raw_graph'), device = "png")
+    
+  chr_image_test <- image_read(paste0(plot.dir,'chromosome_raw_graph.png'))
+  chr_image_test_1 <- image_trim(chr_image_test,fuzz=0)
+  chr_image_test_2 <- image_border(image_annotate(chr_image_test_1, "CONFIDENTIAL", size = 100, color = "white", boxcolor = "white",gravity="northeast",location="+40+90"),color = "white","20X20") 
+  image_write(chr_image_test_2, path = paste0(plot.dir,'replicated.cg.karyogram.png'), format = "png")
+  file.remove(paste0(plot.dir,'chromosome_raw_graph.png'))
+  file.remove(paste0(plot.dir,'chromosome_raw_graph.png'))
+  rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2)
+  #' please check if file labelled as replicated.cg.karyogram.png is only created in plot.dr
 }
 
 
