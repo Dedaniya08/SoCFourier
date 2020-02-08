@@ -623,9 +623,45 @@ get_MxG_data = function(cg=NULL,snp=NULL,model=NULL){
 #' Plot G1 and G2 SNP locations as karyograms
 #'
 #' @return NULL
+chromosome_graph_plot = function(plot_file.gr=NULL,file_name_1=NULL,colorset_code=NULL){
+ 
+  require(magick)
+  require(RIdeogram)
+  data(human_karyotype, package="RIdeogram")
+  data(gene_density, package="RIdeogram")
+  human_karyotype <- human_karyotype[1:22,]
+  gene_density$Value = "0"
+
+  chr_plot.gr <- plot_file.gr 
+  chr_plot_replicate_true <- as.data.frame(chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)])
+  chr_1<-data.frame(chr_plot_replicate_true$seqnames,chr_plot_replicate_true$start-1600000,chr_plot_replicate_true$start-1400000)
+  chr_1$chr_plot_replicate_true.seqnames<-gsub("chr","",chr_1$chr_plot_replicate_true.seqnames)
+  chr_1$Value = "200"
+  chr_1 <- setNames(chr_1,  c("Chr", "Start", "End","Value"))
+
+  chr_loc_marked_for_plot <-rbind(gene_density,chr_1,stringsAsFactors=TRUE)
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[which(chr_loc_marked_for_plot$Chr != "X"), ]
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[which(chr_loc_marked_for_plot$Chr != "Y"), ]
+  chr_loc_marked_for_plot<-chr_loc_marked_for_plot[order(chr_loc_marked_for_plot$Chr,chr_loc_marked_for_plot$Start), ]
+  rownames(chr_loc_marked_for_plot) <- 1 : length(rownames(chr_loc_marked_for_plot))
+  chr_loc_marked_for_plot$Chr<-as.numeric(chr_loc_marked_for_plot$Chr)
+  chr_loc_marked_for_plot$Value<-as.numeric(chr_loc_marked_for_plot$Value)
+
+  ideogram(karyotype = human_karyotype,label = NULL, label_type = NULL, overlaid = chr_loc_marked_for_plot, colorset1 = colorset_code,width = 170,Lx=160,Ly=35)
+  convertSVG("chromosome.svg", file = '~/projects/soc_enid_emphasis/analysis/emphasis_GEM/chromosome_raw_graph.png', device = "png")
+
+  chr_image_test <- image_read('~/projects/soc_enid_emphasis/analysis/emphasis_GEM/chromosome_raw_graph.png'))
+  chr_image_test_1 <- image_trim(chr_image_test,fuzz=0)
+  chr_image_test_2 <- image_border(image_annotate(chr_image_test_1, "CONFIDENTIAL", size = 100, color = "white", boxcolor = "white",gravity="northeast",location="+40+90"),color = "white","20X20") 
+  image_write(chr_image_test_2, path = paste0('~/projects/soc_enid_emphasis/analysis/emphasis_GEM/',file_name_1,'.png'), format = "png")
+  file.remove(paste0(~/projects/soc_enid_emphasis/analysis/emphasis_GEM/'chromosome.svg'))
+  file.remove(paste0(~/projects/soc_enid_emphasis/analysis/emphasis_GEM/'chromosome_raw_graph.png'))
+  rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2)
+  #' please check if file labelled as G1 or G2 is only created in ~/projects/soc_enid_emphasis/analysis/emphasis_GEM/
+}
+
 plot_G1_G2_locations_karyogram = function(){
   
-  require(ggbio)
   require(GenomicRanges)
 
   g1.g2.table = read_csv(
@@ -643,27 +679,7 @@ plot_G1_G2_locations_karyogram = function(){
                              end.field="winning.G1.loc.end"
     )
   
-  
-  # plot G1 SNP distribution
-  # get seqlength (otherwise ggbio uses extent of data)
-  g1.gr <- keepSeqlevels(g1.gr, levels(seqnames(g1.gr)))
-  data(ideoCyto, package = "biovizBase")
-  seqlengths(g1.gr) <- as.numeric(seqlengths(ideoCyto$hg19)[levels(seqnames(g1.gr))])
-  print(
-    autoplot(
-      g1.gr,
-      show.legend=FALSE,
-      layout='karyogram'
-    )
-  )
-  
-  plt.width = 14 # plot width in cms
-  plt.height = 12 # plot height in cms
-  ggsave(filename = ('~/projects/soc_enid_emphasis/analysis/emphasis_GEM/g1.snp.locs.karyogram.pdf'),
-         dpi = plt.dpi,width = plt.width,height = plt.height,units = 'cm'
-  )
-  
-
+  chromosome_graph_plot(plot_file.gr=g1.gr,file_name_1=G1.loc,colorset_code= c( "#ededed", "#e5432d"))
   # G2xE
   g1.g2.table$winning.G2.loc.end = g1.g2.table$winning.G2.loc + 1
   g2.gr =
@@ -676,26 +692,7 @@ plot_G1_G2_locations_karyogram = function(){
                              end.field="winning.G2.loc.end"
     )
   
-  # plot g2 SNP distribution
-  g2.gr <- keepSeqlevels(g2.gr, levels(seqnames(g2.gr)))
-  # get seqlength (otherwise ggbio uses extent of data)
-  data(ideoCyto, package = "biovizBase")
-  seqlengths(g2.gr) <- as.numeric(seqlengths(ideoCyto$hg19)[levels(seqnames(g2.gr))])
-  print(
-    autoplot(
-      
-      g2.gr,
-      show.legend=FALSE,
-      layout='karyogram'
-    )
-  )
-  ggsave(filename = ('~/projects/soc_enid_emphasis/analysis/emphasis_GEM/g2.snp.locs.karyogram.pdf'),
-         dpi = plt.dpi,width = plt.width,height = plt.height,units = 'cm'
-  )
-
-  
-    
-    
+   chromosome_graph_plot(plot_file.gr=g2.gr,file_name_1=G2.loc,colorset_code= c( "#ededed", "#3CB371")) 
 }
 
 
