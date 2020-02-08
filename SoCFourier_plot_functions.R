@@ -707,13 +707,14 @@ plot_ks_matches = function(matches=NULL,n.query.cgs.to.plot=1,betas=NULL,plot.sa
 plot_cpg_locations_karyo = function(annot.gr=NULL){
 
   require(magick)
+  require(GenomicRanges)
   require(RIdeogram)
   data(human_karyotype, package="RIdeogram")
   data(gene_density, package="RIdeogram")
   human_karyotype <- human_karyotype[1:22,]
   gene_density$Value = "0"
   
-  chr_plot.gr <- annot.gr  #'please chech weather the file is correct ( in mail the file name was annotated.array.gr.rds)
+  chr_plot.gr <- annot.gr  #'please check weather the file is correct ( in mail the file name was annotated.array.gr.rds)
   chr_plot_replicate_true <- as.data.frame(chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)])
   chr_1<-data.frame(chr_plot_replicate_true$seqnames,chr_plot_replicate_true$start-1600000,chr_plot_replicate_true$start-1400000)
   chr_1$chr_plot_replicate_true.seqnames<-gsub("chr","",chr_1$chr_plot_replicate_true.seqnames)
@@ -735,7 +736,7 @@ plot_cpg_locations_karyo = function(annot.gr=NULL){
   chr_image_test_1 <- image_trim(chr_image_test,fuzz=0)
   chr_image_test_2 <- image_border(image_annotate(chr_image_test_1, "CONFIDENTIAL", size = 100, color = "white", boxcolor = "white",gravity="northeast",location="+40+90"),color = "white","20X20") 
   image_write(chr_image_test_2, path = paste0(plot.dir,'replicated.cg.karyogram.png'), format = "png")
-  file.remove(paste0(plot.dir,'chromosome_raw_graph.png'))
+  file.remove(paste0(plot.dir,'chromosome_raw_graph.svg'))
   file.remove(paste0(plot.dir,'chromosome_raw_graph.png'))
   rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2)
   #' please check if file labelled as replicated.cg.karyogram.png is only created in plot.dr
