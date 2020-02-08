@@ -295,7 +295,7 @@ plot_beta_summary_stat_vs_matched(annot.gr = annot.gr,summary.stat = 'median',pl
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Plot genome-wide SoC-CpG locations on karyogram  ----
-plot_cpg_locations_karyo(annot.gr = annot.gr,plot.save = T,plot.params = plt.regular)
+plot_cpg_locations_karyo(annot.gr = annot.gr)
 
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
