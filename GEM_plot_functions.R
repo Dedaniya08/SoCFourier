@@ -625,16 +625,31 @@ get_MxG_data = function(cg=NULL,snp=NULL,model=NULL){
 #' @return NULL
 chromosome_graph_plot = function(plot_file.gr=NULL,file_name_1=NULL,colorset_code=NULL){
  
+  BiocManager::install("rtracklayer")
+  BiocManager::install("liftOver")
   require(magick)
   require(RIdeogram)
+  require(rtracklayer)
+  require(liftover)
+  
   data(human_karyotype, package="RIdeogram")
   data(gene_density, package="RIdeogram")
   human_karyotype <- human_karyotype[1:22,]
   gene_density$Value = "0"
+  download.file(url="ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz",destfile = "~/projects/soc_enid_emphasis/analysis/emphasis_GEM/"))
+  untar(paste0("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/","hg19ToHg38.over.chain.gz"))
+  supporting_build_converstion_file = import.chain("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/","hg19ToHg38.over.chain")
 
+  
   chr_plot.gr <- plot_file.gr 
-  chr_plot_replicate_true <- as.data.frame(chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)])
-  chr_1<-data.frame(chr_plot_replicate_true$seqnames,chr_plot_replicate_true$start-1600000,chr_plot_replicate_true$start-1400000)
+  chr_plot_replicate_true <- chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)]
+  seqlevelsStyle(chr_plot_replicate_true) = "UCSC"
+  chr_plot_replicate_true_hg38 = liftOver(chr_plot_replicate_true, supporting_build_converstion_file)
+  chr_plot_replicate_true_hg38 = unlist(chr_plot_replicate_true_hg38)
+  chr_plot_replicate_true_hg38<-as.data.frame(chr_plot_replicate_true_hg38)
+
+  
+  chr_1<-data.frame(chr_plot_replicate_true_hg38$seqnames,chr_plot_replicate_true_hg38$start-200000,chr_plot_replicate_true_hg38$start)
   chr_1$chr_plot_replicate_true.seqnames<-gsub("chr","",chr_1$chr_plot_replicate_true.seqnames)
   chr_1$Value = "200"
   chr_1 <- setNames(chr_1,  c("Chr", "Start", "End","Value"))
@@ -654,10 +669,11 @@ chromosome_graph_plot = function(plot_file.gr=NULL,file_name_1=NULL,colorset_cod
   chr_image_test_1 <- image_trim(chr_image_test,fuzz=0)
   chr_image_test_2 <- image_border(image_annotate(chr_image_test_1, "CONFIDENTIAL", size = 100, color = "white", boxcolor = "white",gravity="northeast",location="+40+90"),color = "white","20X20") 
   image_write(chr_image_test_2, path = paste0('~/projects/soc_enid_emphasis/analysis/emphasis_GEM/',file_name_1,'.png'), format = "png")
-  file.remove(paste0(~/projects/soc_enid_emphasis/analysis/emphasis_GEM/'chromosome.svg'))
-  file.remove(paste0(~/projects/soc_enid_emphasis/analysis/emphasis_GEM/'chromosome_raw_graph.png'))
-  rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2)
-  #' please check if file labelled as G1 or G2 is only created in ~/projects/soc_enid_emphasis/analysis/emphasis_GEM/
+  file.remove(paste0("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/",'chromosome.svg'))
+  file.remove(paste0("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/",'chromosome_raw_graph.png'))
+  file.remove(paste0("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/",'hg19ToHg38.over.chain'))
+  file.remove(paste0("~/projects/soc_enid_emphasis/analysis/emphasis_GEM/",'hg19ToHg38.over.chain.gz'))
+  rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2,supporting_build_converstion_file)
 }
 
 plot_G1_G2_locations_karyogram = function(){
