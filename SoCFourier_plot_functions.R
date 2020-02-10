@@ -706,17 +706,30 @@ plot_ks_matches = function(matches=NULL,n.query.cgs.to.plot=1,betas=NULL,plot.sa
 #' @return NULL
 plot_cpg_locations_karyo = function(annot.gr=NULL){
 
+  BiocManager::install("rtracklayer")
+  BiocManager::install("liftOver")
   require(magick)
-  require(GenomicRanges)
   require(RIdeogram)
+  require(rtracklayer)
+  require(liftover)
+  require(GenomicRanges)
+ 
   data(human_karyotype, package="RIdeogram")
   data(gene_density, package="RIdeogram")
   human_karyotype <- human_karyotype[1:22,]
   gene_density$Value = "0"
-  
-  chr_plot.gr <- annot.gr  #'please check weather the file is correct ( in mail the file name was annotated.array.gr.rds)
-  chr_plot_replicate_true <- as.data.frame(chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)])
-  chr_1<-data.frame(chr_plot_replicate_true$seqnames,chr_plot_replicate_true$start-1600000,chr_plot_replicate_true$start-1400000)
+  download.file(url="ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz",destfile = plot.dir))
+  untar(paste0(plot.dir,"hg19ToHg38.over.chain.gz"))
+  supporting_build_converstion_file = import.chain(plot.dir,"hg19ToHg38.over.chain")
+    
+  chr_plot.gr <- plot_file.gr 
+  chr_plot_replicate_true <- chr_plot.gr[which(chr_plot.gr$replicated==TRUE,)]
+  seqlevelsStyle(chr_plot_replicate_true) = "UCSC"
+  chr_plot_replicate_true_hg38 = liftOver(chr_plot_replicate_true, supporting_build_converstion_file)
+  chr_plot_replicate_true_hg38 = unlist(chr_plot_replicate_true_hg38)
+  chr_plot_replicate_true_hg38<-as.data.frame(chr_plot_replicate_true_hg38)
+
+  chr_1<-data.frame(chr_plot_replicate_true_hg38$seqnames,chr_plot_replicate_true_hg38$start-200000,chr_plot_replicate_true_hg38$start)
   chr_1$chr_plot_replicate_true.seqnames<-gsub("chr","",chr_1$chr_plot_replicate_true.seqnames)
   chr_1$Value = "200"
   chr_1 <- setNames(chr_1,  c("Chr", "Start", "End","Value"))
@@ -738,10 +751,10 @@ plot_cpg_locations_karyo = function(annot.gr=NULL){
   image_write(chr_image_test_2, path = paste0(plot.dir,'replicated.cg.karyogram.png'), format = "png")
   file.remove(paste0(plot.dir,'chromosome_raw_graph.svg'))
   file.remove(paste0(plot.dir,'chromosome_raw_graph.png'))
+  file.remove(paste0(plot.dir,'hg19ToHg38.over.chain'))
+  file.remove(paste0(plot.dir,'hg19ToHg38.over.chain.gz'))
   rm(chr_plot.gr,chr_plot_replicate_true,chr_1,chr_loc_marked_for_plot,chr_image_test,chr_image_test_1,chr_image_test_2)
-  #' please check if file labelled as replicated.cg.karyogram.png is only created in plot.dr
 }
-
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^
 #' Plot genomic context wrt CG Islands and gene model
